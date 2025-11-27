@@ -1,0 +1,32 @@
+{
+  "name": "document-parsing-backend",
+  "version": "1.0.0",
+  "description": "Backend for Document Parsing and Management System",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "create-guest": "node scripts/createGuestUser.js"
+  },
+  "keywords": ["document", "parsing", "mern", "express"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2",
+    "mongoose": "^7.5.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "multer": "^1.4.5-lts.1",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "pdf-parse": "^1.1.1",
+    "mammoth": "^1.6.0",
+    "nodemon": "^3.0.1",
+    "csv-parser": "^3.0.0",
+    "bull": "^4.10.4",
+    "redis": "^4.6.7",
+    "axios": "^1.5.0"
+  }
+}
+
+
