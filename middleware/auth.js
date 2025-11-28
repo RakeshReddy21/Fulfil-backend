@@ -3,13 +3,18 @@ const User = require('../models/User');
 
 const auth = async (req, res, next) => {
   try {
+    const JWT_SECRET = process.env.JWT_SECRET || '';
+    if (!JWT_SECRET) {
+      return res.status(503).json({ message: 'JWT_SECRET not configured. Please set it in environment variables.' });
+    }
+
     const token = req.header('Authorization')?.replace('Bearer ', '');
     
     if (!token) {
       return res.status(401).json({ message: 'No token, authorization denied' });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, JWT_SECRET);
     const user = await User.findById(decoded.userId).select('-password');
     
     if (!user) {

@@ -6,22 +6,21 @@ const path = require('path');
 
 dotenv.config();
 
-// Validate required environment variables before starting
-const requiredEnvVars = ['MONGODB_URI', 'JWT_SECRET'];
-const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
+// Use environment variables with fallback values
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://rkonda863_db_user:sxVwpQf9KfTBv7R7@document-parsing.3dfsce8.mongodb.net/?appName=Document-parsing';
+const JWT_SECRET = process.env.JWT_SECRET || 'jaNSCJnvcdjVNSJVNjvnivndsoivnkjdVN';
+const PORT = process.env.PORT || 5000;
 
-if (missingEnvVars.length > 0) {
-  console.error('❌ Missing required environment variables:');
-  missingEnvVars.forEach(varName => {
-    console.error(`   - ${varName}`);
-  });
-  console.error('\nPlease set these environment variables:');
-  console.error('1. For local development: Create a .env file in the backend directory');
-  console.error('2. For production (Render): Set them in Render Dashboard → Environment');
-  console.error('\nExample .env file:');
-  console.error('MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/database?retryWrites=true&w=majority');
-  console.error('JWT_SECRET=your-secret-key-here');
-  process.exit(1);
+// Warn about missing required environment variables (but don't exit)
+if (!MONGODB_URI) {
+  console.warn('⚠️  WARNING: MONGODB_URI is not set. Database features will not work.');
+  console.warn('   Set MONGODB_URI in your environment variables to enable database functionality.');
+}
+
+if (!JWT_SECRET) {
+  console.warn('⚠️  WARNING: JWT_SECRET is not set. Authentication features will not work.');
+  console.warn('   Set JWT_SECRET in your environment variables to enable authentication.');
+  console.warn('   Generate one using: openssl rand -base64 32');
 }
 
 const app = express();
@@ -68,9 +67,16 @@ app.get('/api/health', (req, res) => {
     3: 'disconnecting'
   };
   
+  const hasMongoDB = !!MONGODB_URI;
+  const hasJWT = !!JWT_SECRET;
+  
   res.json({ 
-    status: dbStatus === 1 ? 'OK' : 'WARNING',
+    status: (dbStatus === 1 && hasMongoDB && hasJWT) ? 'OK' : 'WARNING',
     message: 'Server is running',
+    configuration: {
+      mongodb_uri: hasMongoDB ? 'configured' : 'missing',
+      jwt_secret: hasJWT ? 'configured' : 'missing'
+    },
     database: {
       status: dbStates[dbStatus] || 'unknown',
       connected: dbStatus === 1
@@ -85,9 +91,12 @@ app.get('/api/jobs/:jobId/progress', async (req, res) => {
   }
 
   try {
+    if (!JWT_SECRET) {
+      return res.status(503).json({ error: 'JWT_SECRET not configured' });
+    }
     const jwt = require('jsonwebtoken');
     const User = require('./models/User');
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, JWT_SECRET);
     const user = await User.findById(decoded.userId).select('-password');
     if (!user) {
       return res.status(401).json({ error: 'Invalid token' });
@@ -150,16 +159,28 @@ app.get('/', (req, res) => {
   });
 });
 
-// Wait for MongoDB connection before starting server
+// Start server immediately so Render can detect the port
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+  
+  // Attempt MongoDB connection if URI is provided
+  if (MONGODB_URI) {
+    connectDB();
+  } else {
+    console.warn('⚠️  Skipping MongoDB connection - MONGODB_URI not set');
+  }
+});
+
+// Connect to MongoDB (non-blocking)
 const connectDB = async () => {
   try {
-    // Double-check MONGODB_URI is set (should already be validated above, but extra safety)
-    if (!process.env.MONGODB_URI || process.env.MONGODB_URI.trim() === '') {
-      throw new Error('MONGODB_URI is not set or is empty. Please set it in your environment variables.');
+    if (!MONGODB_URI || MONGODB_URI.trim() === '') {
+      console.warn('⚠️  MONGODB_URI is empty. Database features will not work.');
+      return;
     }
 
     console.log('🔄 Attempting to connect to MongoDB...');
-    await mongoose.connect(process.env.MONGODB_URI, {
+    await mongoose.connect(MONGODB_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
       serverSelectionTimeoutMS: 30000,
@@ -168,15 +189,9 @@ const connectDB = async () => {
     });
 
     console.log('✅ MongoDB Connected Successfully');
-    
-    // Only start server after MongoDB is connected
-    const PORT = process.env.PORT || 5000;
-    app.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT}`);
-    });
   } catch (err) {
-    console.error('\n❌ MongoDB Connection Error:', err.message);
-    console.error('\nPlease check:');
+    console.error('❌ MongoDB Connection Error:', err.message);
+    console.error('Please check:');
     console.error('1. MONGODB_URI is set correctly in environment variables');
     console.error('   - For local: Check your .env file in the backend directory');
     console.error('   - For Render: Go to Dashboard → Your Service → Environment');
@@ -184,8 +199,8 @@ const connectDB = async () => {
     console.error('3. MongoDB cluster is running and accessible');
     console.error('4. Network connectivity to MongoDB server');
     console.error('\nExample MONGODB_URI format:');
-    console.error('mongodb+srv://username:password@cluster.mongodb.net/database?retryWrites=true&w=majority\n');
-    process.exit(1);
+    console.error('mongodb+srv://username:password@cluster.mongodb.net/database?retryWrites=true&w=majority');
+    console.error('\n⚠️  Server will continue running, but database features will not work until MongoDB is connected.\n');
   }
 };
 
@@ -201,9 +216,6 @@ mongoose.connection.on('disconnected', () => {
 mongoose.connection.on('reconnected', () => {
   console.log('MongoDB reconnected successfully');
 });
-
-// Start the connection process
-connectDB();
 
 process.on('unhandledRejection', (error) => {
   if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND' || error.code === 'ETIMEDOUT') {

@@ -15,9 +15,14 @@ router.post('/register', async (req, res) => {
     const user = new User({ name, email, password });
     await user.save();
 
+    const JWT_SECRET = process.env.JWT_SECRET || '';
+    if (!JWT_SECRET) {
+      return res.status(503).json({ message: 'JWT_SECRET not configured. Please set it in environment variables.' });
+    }
+
     const token = jwt.sign(
       { userId: user._id },
-      process.env.JWT_SECRET,
+      JWT_SECRET,
       { expiresIn: '7d' }
     );
 
@@ -49,9 +54,14 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
+    const JWT_SECRET = process.env.JWT_SECRET || '';
+    if (!JWT_SECRET) {
+      return res.status(503).json({ message: 'JWT_SECRET not configured. Please set it in environment variables.' });
+    }
+
     const token = jwt.sign(
       { userId: user._id },
-      process.env.JWT_SECRET,
+      JWT_SECRET,
       { expiresIn: '7d' }
     );
 
