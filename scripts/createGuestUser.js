@@ -4,10 +4,7 @@ require('dotenv').config();
 
 async function createGuestUser() {
   try {
-    await mongoose.connect(process.env.MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    await mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://rkonda863_db_user:sxVwpQf9KfTBv7R7@document-parsing.3dfsce8.mongodb.net/?appName=Document-parsing');
 
     const guestEmail = 'john@gmail.com';
     const guestPassword = '123456';
