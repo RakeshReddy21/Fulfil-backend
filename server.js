@@ -7,7 +7,7 @@ const path = require('path');
 dotenv.config();
 
 // Use environment variables with fallback values
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://rkonda863_db_user:sxVwpQf9KfTBv7R7@document-parsing.3dfsce8.mongodb.net/?appName=Document-parsing';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://rkonda863_db_user:QDt5B6pCRJFcnd69@assignment.3ohuy8s.mongodb.net/?appName=assignment';
 const JWT_SECRET = process.env.JWT_SECRET || 'jaNSCJnvcdjVNSJVNjvnivndsoivnkjdVN';
 const PORT = process.env.PORT || 5000;
 

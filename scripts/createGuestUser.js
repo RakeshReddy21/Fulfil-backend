@@ -4,7 +4,7 @@ require('dotenv').config();
 
 async function createGuestUser() {
   try {
-    await mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://rkonda863_db_user:sxVwpQf9KfTBv7R7@document-parsing.3dfsce8.mongodb.net/?appName=Document-parsing');
+    await mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://rkonda863_db_user:QDt5B6pCRJFcnd69@assignment.3ohuy8s.mongodb.net/?appName=assignment');
 
     const guestEmail = 'john@gmail.com';
     const guestPassword = '123456';
